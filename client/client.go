@@ -36,9 +36,11 @@ func completeHandshake(conn net.Conn, infohash, peerID [20]byte) (*handshake.Han
 	if err != nil {
 		return nil, err
 	}
+
 	if !bytes.Equal(res.InfoHash[:], infohash[:]) {
 		return nil, fmt.Errorf("Expected infohash %x but got %x", res.InfoHash, infohash)
 	}
+
 	return res, nil
 }
 
@@ -50,10 +52,12 @@ func recvBitfield(conn net.Conn) (bitfield.Bitfield, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if msg == nil {
 		err := fmt.Errorf("Expected bitfield but got %s", msg)
 		return nil, err
 	}
+
 	if msg.ID != message.MsgBitfield {
 		err := fmt.Errorf("Expected bitfield but got ID %d", msg.ID)
 		return nil, err
@@ -95,6 +99,7 @@ func New(peer peers.Peer, peerID, infoHash [20]byte) (*Client, error) {
 // Read reads and consumes a message from the connection
 func (c *Client) Read() (*message.Message, error) {
 	msg, err := message.Read(c.Conn)
+
 	return msg, err
 }
 
@@ -102,6 +107,7 @@ func (c *Client) Read() (*message.Message, error) {
 func (c *Client) SendRequest(index, begin, length int) error {
 	req := message.FormatRequest(index, begin, length)
 	_, err := c.Conn.Write(req.Serialize())
+
 	return err
 }
 
@@ -109,6 +115,7 @@ func (c *Client) SendRequest(index, begin, length int) error {
 func (c *Client) SendInterested() error {
 	msg := message.Message{ID: message.MsgInterested}
 	_, err := c.Conn.Write(msg.Serialize())
+
 	return err
 }
 
@@ -116,6 +123,7 @@ func (c *Client) SendInterested() error {
 func (c *Client) SendNotInterested() error {
 	msg := message.Message{ID: message.MsgNotInterested}
 	_, err := c.Conn.Write(msg.Serialize())
+
 	return err
 }
 
@@ -123,6 +131,7 @@ func (c *Client) SendNotInterested() error {
 func (c *Client) SendUnchoke() error {
 	msg := message.Message{ID: message.MsgUnchoke}
 	_, err := c.Conn.Write(msg.Serialize())
+
 	return err
 }
 
@@ -130,5 +139,6 @@ func (c *Client) SendUnchoke() error {
 func (c *Client) SendHave(index int) error {
 	msg := message.FormatHave(index)
 	_, err := c.Conn.Write(msg.Serialize())
+
 	return err
 }
