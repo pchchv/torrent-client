@@ -30,6 +30,7 @@ func (h *Handshake) Serialize() []byte {
 	curr += copy(buf[curr:], make([]byte, 8)) // 8 reserved bytes
 	curr += copy(buf[curr:], h.InfoHash[:])
 	curr += copy(buf[curr:], h.PeerID[:])
+
 	return buf
 }
 
@@ -40,8 +41,8 @@ func Read(r io.Reader) (*Handshake, error) {
 	if err != nil {
 		return nil, err
 	}
-	pstrlen := int(lengthBuf[0])
 
+	pstrlen := int(lengthBuf[0])
 	if pstrlen == 0 {
 		err := fmt.Errorf("pstrlen cannot be 0")
 		return nil, err
