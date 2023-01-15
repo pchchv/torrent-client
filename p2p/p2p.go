@@ -80,6 +80,7 @@ func (state *pieceProgress) readMessage() error {
 		state.downloaded += n
 		state.backlog--
 	}
+
 	return nil
 }
 
@@ -125,9 +126,11 @@ func attemptDownloadPiece(c *client.Client, pw *pieceWork) ([]byte, error) {
 
 func checkIntegrity(pw *pieceWork, buf []byte) error {
 	hash := sha1.Sum(buf)
+
 	if !bytes.Equal(hash[:], pw.hash[:]) {
 		return fmt.Errorf("Index %d failed integrity check", pw.index)
 	}
+
 	return nil
 }
 
@@ -137,6 +140,7 @@ func (t *Torrent) startDownloadWorker(peer peers.Peer, workQueue chan *pieceWork
 		log.Printf("Could not handshake with %s. Disconnecting\n", peer.IP)
 		return
 	}
+
 	defer c.Conn.Close()
 	log.Printf("Completed handshake with %s\n", peer.IP)
 
@@ -172,9 +176,11 @@ func (t *Torrent) startDownloadWorker(peer peers.Peer, workQueue chan *pieceWork
 func (t *Torrent) calculateBoundsForPiece(index int) (begin int, end int) {
 	begin = index * t.PieceLength
 	end = begin + t.PieceLength
+
 	if end > t.Length {
 		end = t.Length
 	}
+
 	return begin, end
 }
 
@@ -189,6 +195,7 @@ func (t *Torrent) Download() ([]byte, error) {
 	// Init queues for workers to retrieve work and send results
 	workQueue := make(chan *pieceWork, len(t.PieceHashes))
 	results := make(chan *pieceResult)
+
 	for index, hash := range t.PieceHashes {
 		length := t.calculatePieceSize(index)
 		workQueue <- &pieceWork{index, hash, length}
