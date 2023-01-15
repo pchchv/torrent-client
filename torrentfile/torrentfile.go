@@ -58,6 +58,7 @@ func (t *TorrentFile) DownloadToFile(path string) error {
 		Length:      t.Length,
 		Name:        t.Name,
 	}
+
 	buf, err := torrent.Download()
 	if err != nil {
 		return err
@@ -67,11 +68,13 @@ func (t *TorrentFile) DownloadToFile(path string) error {
 	if err != nil {
 		return err
 	}
+
 	defer outFile.Close()
 	_, err = outFile.Write(buf)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -81,13 +84,16 @@ func Open(path string) (TorrentFile, error) {
 	if err != nil {
 		return TorrentFile{}, err
 	}
+
 	defer file.Close()
 
 	bto := bencodeTorrent{}
 	err = bencode.Unmarshal(file, &bto)
+
 	if err != nil {
 		return TorrentFile{}, err
 	}
+
 	return bto.toTorrentFile()
 }
 
@@ -97,23 +103,28 @@ func (i *bencodeInfo) hash() ([20]byte, error) {
 	if err != nil {
 		return [20]byte{}, err
 	}
+
 	h := sha1.Sum(buf.Bytes())
+
 	return h, nil
 }
 
 func (i *bencodeInfo) splitPieceHashes() ([][20]byte, error) {
 	hashLen := 20 // Length of SHA-1 hash
 	buf := []byte(i.Pieces)
+
 	if len(buf)%hashLen != 0 {
 		err := fmt.Errorf("Received malformed pieces of length %d", len(buf))
 		return nil, err
 	}
+
 	numHashes := len(buf) / hashLen
 	hashes := make([][20]byte, numHashes)
 
 	for i := 0; i < numHashes; i++ {
 		copy(hashes[i][:], buf[i*hashLen:(i+1)*hashLen])
 	}
+
 	return hashes, nil
 }
 
@@ -122,10 +133,12 @@ func (bto *bencodeTorrent) toTorrentFile() (TorrentFile, error) {
 	if err != nil {
 		return TorrentFile{}, err
 	}
+
 	pieceHashes, err := bto.Info.splitPieceHashes()
 	if err != nil {
 		return TorrentFile{}, err
 	}
+
 	t := TorrentFile{
 		Announce:    bto.Announce,
 		InfoHash:    infoHash,
@@ -134,5 +147,6 @@ func (bto *bencodeTorrent) toTorrentFile() (TorrentFile, error) {
 		Length:      bto.Info.Length,
 		Name:        bto.Info.Name,
 	}
+
 	return t, nil
 }
