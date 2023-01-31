@@ -1,9 +1,9 @@
 package main
 
 import (
-	"log"
 	"os"
 
+	"github.com/pchchv/golog"
 	"github.com/pchchv/torrent-client/torrentfile"
 )
 
@@ -13,11 +13,11 @@ func main() {
 
 	tf, err := torrentfile.Open(inPath)
 	if err != nil {
-		log.Fatal(err)
+		golog.Fatal(err.Error())
 	}
 
 	err = tf.DownloadToFile(outPath)
 	if err != nil {
-		log.Fatal(err)
+		golog.Fatal(err.Error())
 	}
 }

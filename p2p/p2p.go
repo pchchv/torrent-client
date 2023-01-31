@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"crypto/sha1"
 	"fmt"
-	"log"
 	"runtime"
 	"time"
 
+	"github.com/pchchv/golog"
 	"github.com/pchchv/torrent-client/client"
 	"github.com/pchchv/torrent-client/message"
 	"github.com/pchchv/torrent-client/peers"
@@ -93,7 +93,10 @@ func attemptDownloadPiece(c *client.Client, pw *pieceWork) ([]byte, error) {
 
 	// Setting a deadline helps get unresponsive peers unstuck.
 	// 30 seconds is more than enough time to download a 262 KB piece
-	c.Conn.SetDeadline(time.Now().Add(30 * time.Second))
+	err := c.Conn.SetDeadline(time.Now().Add(30 * time.Second))
+	if err != nil {
+		return nil, err
+	}
 	defer c.Conn.SetDeadline(time.Time{}) // Disable the deadline
 
 	for state.downloaded < pw.length {
@@ -137,12 +140,12 @@ func checkIntegrity(pw *pieceWork, buf []byte) error {
 func (t *Torrent) startDownloadWorker(peer peers.Peer, workQueue chan *pieceWork, results chan *pieceResult) {
 	c, err := client.New(peer, t.PeerID, t.InfoHash)
 	if err != nil {
-		log.Printf("Could not handshake with %s. Disconnecting\n", peer.IP)
+		golog.Info("Could not handshake with %s. Disconnecting\n", peer.IP)
 		return
 	}
 
 	defer c.Conn.Close()
-	log.Printf("Completed handshake with %s\n", peer.IP)
+	golog.Info("Completed handshake with %s\n", peer.IP)
 
 	c.SendUnchoke()
 	c.SendInterested()
@@ -156,14 +159,14 @@ func (t *Torrent) startDownloadWorker(peer peers.Peer, workQueue chan *pieceWork
 		// Download the piece
 		buf, err := attemptDownloadPiece(c, pw)
 		if err != nil {
-			log.Println("Exiting", err)
+			golog.Info("Exiting", err)
 			workQueue <- pw // Put piece back on the queue
 			return
 		}
 
 		err = checkIntegrity(pw, buf)
 		if err != nil {
-			log.Printf("Piece #%d failed integrity check\n", pw.index)
+			golog.Info("Piece #%d failed integrity check\n", pw.index)
 			workQueue <- pw // Put piece back on the queue
 			continue
 		}
@@ -191,7 +194,7 @@ func (t *Torrent) calculatePieceSize(index int) int {
 
 // Download downloads the torrent. This stores the entire file in memory.
 func (t *Torrent) Download() ([]byte, error) {
-	log.Println("Starting download for", t.Name)
+	golog.Info("Starting download for", t.Name)
 	// Init queues for workers to retrieve work and send results
 	workQueue := make(chan *pieceWork, len(t.PieceHashes))
 	results := make(chan *pieceResult)
@@ -217,7 +220,7 @@ func (t *Torrent) Download() ([]byte, error) {
 
 		percent := float64(donePieces) / float64(len(t.PieceHashes)) * 100
 		numWorkers := runtime.NumGoroutine() - 1 // subtract 1 for main thread
-		log.Printf("(%0.2f%%) Downloaded piece #%d from %d peers\n", percent, res.index, numWorkers)
+		golog.Info("(%0.2f%%) Downloaded piece #%d from %d peers\n", percent, res.index, numWorkers)
 	}
 	close(workQueue)
 
