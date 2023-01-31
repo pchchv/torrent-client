@@ -23,11 +23,14 @@ type Client struct {
 }
 
 func completeHandshake(conn net.Conn, infohash, peerID [20]byte) (*handshake.Handshake, error) {
-	conn.SetDeadline(time.Now().Add(3 * time.Second))
+	err := conn.SetDeadline(time.Now().Add(3 * time.Second))
+	if err != nil {
+		return nil, err
+	}
 	defer conn.SetDeadline(time.Time{}) // Disable the deadline
 
 	req := handshake.New(infohash, peerID)
-	_, err := conn.Write(req.Serialize())
+	_, err = conn.Write(req.Serialize())
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +48,10 @@ func completeHandshake(conn net.Conn, infohash, peerID [20]byte) (*handshake.Han
 }
 
 func recvBitfield(conn net.Conn) (bitfield.Bitfield, error) {
-	conn.SetDeadline(time.Now().Add(5 * time.Second))
+	err := conn.SetDeadline(time.Now().Add(5 * time.Second))
+	if err != nil {
+		return nil, err
+	}
 	defer conn.SetDeadline(time.Time{}) // Disable the deadline
 
 	msg, err := message.Read(conn)

@@ -147,8 +147,16 @@ func (t *Torrent) startDownloadWorker(peer peers.Peer, workQueue chan *pieceWork
 	defer c.Conn.Close()
 	golog.Info("Completed handshake with %s\n", peer.IP)
 
-	c.SendUnchoke()
-	c.SendInterested()
+	err = c.SendUnchoke()
+	if err != nil {
+		golog.Info(err.Error())
+		return
+	}
+	err = c.SendInterested()
+	if err != nil {
+		golog.Info(err.Error())
+		return
+	}
 
 	for pw := range workQueue {
 		if !c.Bitfield.HasPiece(pw.index) {
@@ -159,7 +167,7 @@ func (t *Torrent) startDownloadWorker(peer peers.Peer, workQueue chan *pieceWork
 		// Download the piece
 		buf, err := attemptDownloadPiece(c, pw)
 		if err != nil {
-			golog.Info("Exiting", err)
+			golog.Info(fmt.Sprintf("Exiting %e", err))
 			workQueue <- pw // Put piece back on the queue
 			return
 		}
@@ -171,7 +179,11 @@ func (t *Torrent) startDownloadWorker(peer peers.Peer, workQueue chan *pieceWork
 			continue
 		}
 
-		c.SendHave(pw.index)
+		err = c.SendHave(pw.index)
+		if err != nil {
+			golog.Info(err.Error())
+			return
+		}
 		results <- &pieceResult{pw.index, buf}
 	}
 }
@@ -194,7 +206,7 @@ func (t *Torrent) calculatePieceSize(index int) int {
 
 // Download downloads the torrent. This stores the entire file in memory.
 func (t *Torrent) Download() ([]byte, error) {
-	golog.Info("Starting download for", t.Name)
+	golog.Info(fmt.Sprintf("Starting download for %v", t.Name))
 	// Init queues for workers to retrieve work and send results
 	workQueue := make(chan *pieceWork, len(t.PieceHashes))
 	results := make(chan *pieceResult)

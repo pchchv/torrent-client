@@ -40,7 +40,10 @@ func TestRequestPeers(t *testing.T) {
 					192, 0, 2, 123, 0x1A, 0xE1, // 0x1AE1 = 6881
 					127, 0, 0, 1, 0x1A, 0xE9, // 0x1AE9 = 6889
 				}) + "e")
-		w.Write(response)
+		_, err := w.Write(response)
+		if err != nil {
+			t.Error(err)
+		}
 	}))
 	defer ts.Close()
 	tf := TorrentFile{

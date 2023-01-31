@@ -3,7 +3,7 @@ package torrentfile
 import (
 	"encoding/json"
 	"flag"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,11 +20,14 @@ func TestOpen(t *testing.T) {
 	if *update {
 		serialized, err := json.MarshalIndent(torrent, "", "  ")
 		require.Nil(t, err)
-		ioutil.WriteFile(goldenPath, serialized, 0644)
+		err = os.WriteFile(goldenPath, serialized, 0o644)
+		if err != nil {
+			t.Error(err)
+		}
 	}
 
 	expected := TorrentFile{}
-	golden, err := ioutil.ReadFile(goldenPath)
+	golden, err := os.ReadFile(goldenPath)
 	require.Nil(t, err)
 	err = json.Unmarshal(golden, &expected)
 	require.Nil(t, err)
